@@ -48,7 +48,7 @@ Test the closed-loop PI speed controller response to changing target speeds.
 - Speed values jump in approximately 40 counts/s steps.
 
 ### Conclusion
-The PI controller works and can track changing target speeds. The remaining ripple is likely caused mainly by measurement quantization and partly by mechanical effects (I guess bro).
+The PI controller works and can track changing target speeds. The remaining ripple is likely caused mainly by measurement quantization and partly by mechanical effects (I guess).
 
 ### Next steps
 - Try lower Ki to reduce overshoot.
