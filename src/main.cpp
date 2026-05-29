@@ -45,26 +45,21 @@ void loop()
         float dt = (now - lastControl) / 1000.0f;
         lastControl = now;
 
-        // float targetSpeed = getTargetSpeed();
-        // float measuredSpeed = motorSpeed(dt);
-        // float error = calcError(targetSpeed, measuredSpeed);
+        float targetSpeed = getTargetSpeed(5000.0f);
+        float measuredSpeed = motorSpeed(dt);
+        float error = calcError(targetSpeed, measuredSpeed);
 
-        // int pwm = PI_update(error, dt);
+        int pwm = PI_update(error, dt);
 
-        // motor(pwm);
+        motor(pwm);
 
-        // Serial.print("Target [counts/s]: ");
-        // Serial.print(targetSpeed);
-        // Serial.print(" | Measured [counts/s]: ");
-        // Serial.print(measuredSpeed);
-        // Serial.print(" | Error: ");
-        // Serial.print(error);
-        // Serial.print(" | PWM: ");
-        // Serial.println(pwm);
-
-        int32_t encoderCount = getEncoderCount();
-        Serial.print("Encoder Count: ");
-        Serial.println(encoderCount);
-         // just to test encoder reading, remove later
+        Serial.print("Target [counts/s]: ");
+        Serial.print(targetSpeed);
+        Serial.print(" | Measured [counts/s]: ");
+        Serial.print(measuredSpeed);
+        Serial.print(" | Error: ");
+        Serial.print(error);
+        Serial.print(" | PWM: ");
+        Serial.println(pwm);
     }
 }

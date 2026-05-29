@@ -3,6 +3,6 @@
 
 #include <Arduino.h>
 
-float getTargetSpeed();
+float getTargetSpeed(float targetSpeed = 0);
 
 #endif

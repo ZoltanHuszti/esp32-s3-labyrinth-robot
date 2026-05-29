@@ -1,23 +1,22 @@
 #include "test_profile.h"
 
-float getTargetSpeed()
+float getTargetSpeed(float targetSpeed)
 {
-    uint32_t testTime = millis() % 20000;
-
-    if (testTime < 5000)
+    if(targetSpeed != 0)
     {
-        return 2000.0f;
-    }
-    else if (testTime < 10000)
-    {
-        return 500.0f;
-    }
-    else if (testTime < 15000)
-    {
-        return 900.0f;
-    }
+        return sin(millis() / 1000.0f) * targetSpeed; // Simulate a varying target speed between -5000 and 5000 counts/s
+    } 
     else
     {
-        return 1500.0f;
-    }
+        uint32_t testTime = millis() % 6000;
+
+        if (testTime < 5000)
+        {
+            return -5000.0f;
+        }
+        else
+        {
+            return 0.0f;
+        }
+    }  
 }
