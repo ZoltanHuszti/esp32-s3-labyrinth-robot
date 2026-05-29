@@ -12,7 +12,28 @@ Runs every 25 ms.
 7. Print log line
 
 ## Interrupts
-The encoder ISR increments encoder_count on each falling edge of encoder A.
+
+The encoder uses quadrature decoding with two channels: `ENC_A_PIN` and `ENC_B_PIN`.
+
+Both encoder channels are configured with `CHANGE` interrupts, so the interrupt routines run on both rising and falling edges.
+
+The encoder count is signed:
+
+```cpp
+volatile int32_t encoder_count;
+```
+
+The ISR updates `encoder_count` depending on the detected rotation direction:
+
+* positive rotation: `encoder_count++`
+* negative rotation: `encoder_count--`
+
+Because of this, `motorSpeed(dt)` returns signed speed in `counts/s`.
+
+```text
+positive speed -> forward rotation
+negative speed -> reverse rotation
+```
 
 ## Main state variables
 - encoder_count
@@ -24,10 +45,15 @@ The encoder ISR increments encoder_count on each falling edge of encoder A.
 - pwm
 
 ## Modules
-- Encoder modul: 
-    - encoder_count()
-    - encoderA_ISR()
-    - motorSpeed(dt)
+* Encoder module:
+  * `encoder_init(pinA, pinB)`
+  * `encoderA_ISR()`
+  * `encoderB_ISR()`
+  * `motorSpeed(dt)`
+  * `getEncoderCount()`
+  * `resetEncoderCount()`
+  * signed `encoder_count`
+
 
 - Motor driver modul:
     - motor_init()

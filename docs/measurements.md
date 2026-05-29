@@ -1,57 +1,70 @@
-# Measurements
+## PI controller tuning with quadrature encoder
 
-This file documents motor control measurements, test conditions, controller parameters, and observations.
+The motor speed controller was tested after implementing quadrature encoder decoding.
 
-## Measurement 001 - Single motor PI step response
+### Test conditions
 
-### Date
-2026-05-28
+The PI controller tuning tests were performed without external load.
 
-### Goal
-Test the closed-loop PI speed controller response to changing target speeds.
+### Encoder mode
 
-### Hardware setup
-- MCU: ESP32-S3
-- Motor driver: DRV8833
-- Motor: N20E encoder DC motor
-- Encoder input: Channel A, falling edge only
-- Power supply: USB for ESP32, external supply/battery for motor driver
-
-### Firmware setup
-- Sampling time: 25 ms
-- Speed unit: counts/s
-- Encoder counting: single channel, falling edge
-- Controller: PI
+* Encoder type: quadrature encoder
+* Encoder channels: A and B
+* Interrupt mode: `CHANGE` on both encoder channels
+* Speed unit: signed `counts/s`
+* Measured wheel resolution: approximately `2569.7 counts / wheel revolution`
 
 ### Controller parameters
-- Kp = 0.4
-- Ki = 0.3
-- Integral limit = ±1000
-- PWM limit = ±255
 
-### Target speed sequence
-- 0–5 s: 2000 counts/s
-- 5–10 s: 500 counts/s
-- 10–15 s: 900 counts/s
-- 15–20 s: 1500 counts/s
+After testing different gain values, the following PI parameters gave the best behavior:
 
-### Log file
-`log/COM3_2026_05_28.15.49.39.993.txt`
+```cpp
+Kp = 0.03f;
+Ki = 0.3f;
+```
 
-### Plot file
-`docs/diagrams/kp04ki03.png`
+These values were tested with both:
 
-### Observations
-- The controller reaches the target speed after a short transient.
-- Some overshoot appears after large target changes.
-- Measured speed is quantized due to encoder pulse counting in a 25 ms window.
-- Speed values jump in approximately 40 counts/s steps.
+* step response target profiles
+* sinusoidal / smooth bidirectional target speed profiles
+
+### Step response test
+
+The controller was tested with target speed step changes. The measured speed followed the target speed with acceptable transient behavior and without sustained oscillation.
+
+The step response plots are stored in:
+
+```text
+docs/diagrams/
+```
+
+### Sinusoidal target tracking test
+
+The controller was also tested with a smooth sinusoidal target speed profile. This test verified that the controller can follow both positive and negative speed commands.
+
+The measured speed followed the sinusoidal target reasonably well in both directions. Around zero speed, a small dead-zone effect can be observed, most likely caused by static friction and the minimum effective PWM required to start the motor.
+
+The sinusoidal tracking plots are stored in:
+
+```text
+docs/diagrams/
+```
 
 ### Conclusion
-The PI controller works and can track changing target speeds. The remaining ripple is likely caused mainly by measurement quantization and partly by mechanical effects (I guess).
 
-### Next steps
-- Try lower Ki to reduce overshoot.
-- Add a low-pass filter or moving average to measured speed.
-- Test fixed PWM response to separate mechanical ripple from control ripple.
-- Later test quadrature encoder counting for higher resolution.
+The values `Kp = 0.03` and `Ki = 0.3` currently provide the best tested behavior for the single-motor quadrature encoder speed control setup.
+
+The controller works for:
+
+* positive speed control
+* negative speed control
+* stop transitions
+* step target changes
+* smooth bidirectional target tracking
+
+Further improvements may include:
+
+* low-speed dead-zone compensation
+* feedforward PWM term
+* target speed ramping
+* testing under real robot load
