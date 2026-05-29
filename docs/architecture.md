@@ -22,3 +22,32 @@ The encoder ISR increments encoder_count on each falling edge of encoder A.
 - expectedSpeed
 - measuredSpeed
 - pwm
+
+## Modules
+- Encoder modul: 
+    - encoder_count()
+    - encoderA_ISR()
+    - motorSpeed(dt)
+
+- Motor driver modul:
+    - motor_init()
+    - motor(speed)
+
+- Controller modul:
+    - calcError()
+    - PI_update(error, dt)
+
+- Test / experiment modul:
+    - targetSpeed lépcsőgenerálás
+    - Serial logging
+
+src/
+  main.cpp
+  motor.cpp
+  encoder.cpp
+  controller.cpp
+
+include/
+  motor.h
+  encoder.h
+  controller.h
