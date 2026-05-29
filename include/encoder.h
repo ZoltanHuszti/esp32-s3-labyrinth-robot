@@ -3,9 +3,9 @@
 
 #include <Arduino.h>
 
-void encoder_init(uint8_t encAPin);
+void encoder_init(uint8_t pinA, uint8_t pinB);
 float motorSpeed(float dt);
-uint32_t getEncoderCount();
+int32_t getEncoderCount();
 void resetEncoderCount();
 
 #endif

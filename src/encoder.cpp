@@ -1,40 +1,76 @@
 #include "encoder.h"
 
+// Encoder state variables
+// This is for one motor 
 static uint8_t encoderPinA = 0;
-volatile uint32_t encoder_count = 0;
+static uint8_t encoderPinB = 0;
+//TODO: implement for two motors 
 
+volatile int32_t encoder_count = 0;
+static int32_t lastCount = 0;
+
+// Non quadrature logic encoder ISR
+// void IRAM_ATTR encoderA_ISR()
+// {
+//     encoder_count++;
+// }
+
+// Quadrature encoder ISR, x4 decoding
 void IRAM_ATTR encoderA_ISR()
 {
+  bool a = digitalRead(encoderPinA);
+  bool b = digitalRead(encoderPinB);
+
+  if (a != b)
     encoder_count++;
+  else
+    encoder_count--;
 }
 
-void encoder_init(uint8_t encAPin)
+void IRAM_ATTR encoderB_ISR()
 {
-    encoderPinA = encAPin;
+  bool a = digitalRead(encoderPinA);
+  bool b = digitalRead(encoderPinB);
+
+  if (a == b)
+    encoder_count++;
+  else
+    encoder_count--;
+}
+
+void encoder_init(uint8_t pinA, uint8_t pinB)
+{
+    encoderPinA = pinA;
+    encoderPinB = pinB;
 
     pinMode(encoderPinA, INPUT_PULLUP);
-    attachInterrupt(digitalPinToInterrupt(encoderPinA), encoderA_ISR, FALLING);
+    pinMode(encoderPinB, INPUT_PULLUP);
+
+    attachInterrupt(digitalPinToInterrupt(encoderPinA), encoderA_ISR, CHANGE);
+    attachInterrupt(digitalPinToInterrupt(encoderPinB), encoderB_ISR, CHANGE);
+
+
 }
 
 float motorSpeed(float dt)
 {
-    static uint32_t lastCount = 0;
+    //static int32_t lastCount = 0;
 
-    uint32_t countNow;
+    int32_t countNow;
 
     noInterrupts();
     countNow = encoder_count;
     interrupts();
 
-    uint32_t deltaCount = countNow - lastCount;
+    int32_t deltaCount = countNow - lastCount;
     lastCount = countNow;
 
     return deltaCount / dt;
 }
 
-uint32_t getEncoderCount()
+int32_t getEncoderCount()
 {
-    uint32_t countCopy;
+    int32_t countCopy;
 
     noInterrupts();
     countCopy = encoder_count;
@@ -47,5 +83,6 @@ void resetEncoderCount()
 {
     noInterrupts();
     encoder_count = 0;
+    lastCount = 0;
     interrupts();
 }
