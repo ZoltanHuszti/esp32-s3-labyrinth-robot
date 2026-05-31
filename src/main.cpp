@@ -5,20 +5,17 @@
 #include "controller.h"
 #include "test_profile.h"
 
-// Encoder pins for single motor quadrature encoder 
-// Motor A
-#define ENC_A_PIN 17
-#define ENC_B_PIN 18
-// Motor B
-// TODO: define pins and implement for both motors with quadrature logic
+// ENCODER pins
+#define LEFT_ENC_A_PIN 17
+#define LEFT_ENC_B_PIN 18
+#define RIGHT_ENC_A_PIN 19
+#define RIGHT_ENC_B_PIN 20
 
-// Motor driver pins
-// Motor A
-#define IN1_PIN 9
-#define IN2_PIN 10
-// Motor B 
-// #define IN3_PIN 11
-// #define IN4_PIN 12
+// MOTOR pins
+#define LEFT_MOTOR_IN1_PIN 9
+#define LEFT_MOTOR_IN2_PIN 10 
+#define RIGHT_MOTOR_IN3_PIN 11
+#define RIGHT_MOTOR_IN4_PIN 12
 
 #define SAMPLING_TIME_MS 25
 
@@ -27,10 +24,10 @@ void setup()
     Serial.begin(115200);
     delay(1000);
 
-    encoder_init(ENC_A_PIN, ENC_B_PIN);
-    motor_init(IN1_PIN, IN2_PIN);
+    encoders_init(LEFT_ENC_A_PIN, LEFT_ENC_B_PIN, RIGHT_ENC_A_PIN, RIGHT_ENC_B_PIN);
+    motors_init(LEFT_MOTOR_IN1_PIN, LEFT_MOTOR_IN2_PIN, RIGHT_MOTOR_IN3_PIN, RIGHT_MOTOR_IN4_PIN);
 
-    Serial.println("ESP32-S3 Labyrinth Robot - Single Motor PI Control");
+    Serial.println("ESP32-S3 Labyrinth Robot - Dual Motor Encoder Test");
     delay(2000);
 }
 
@@ -45,21 +42,27 @@ void loop()
         float dt = (now - lastControl) / 1000.0f;
         lastControl = now;
 
-        float targetSpeed = getTargetSpeed(5000.0f);
-        float measuredSpeed = motorSpeed(dt);
-        float error = calcError(targetSpeed, measuredSpeed);
+        //float targetSpeed = getTargetSpeed(5000.0f);
+        float leftMotorMeasuredSpeed = leftMotorSpeed(dt);
+        float rightMotorMeasuredSpeed = rightMotorSpeed(dt);
+        //float error = calcError(targetSpeed, measuredSpeed);
 
-        int pwm = PI_update(error, dt);
+        leftMotorSet(255);
+        rightMotorSet(255);
 
-        motor(pwm);
+        //int pwm = PI_update(error, dt);
 
-        Serial.print("Target [counts/s]: ");
-        Serial.print(targetSpeed);
-        Serial.print(" | Measured [counts/s]: ");
-        Serial.print(measuredSpeed);
-        Serial.print(" | Error: ");
-        Serial.print(error);
-        Serial.print(" | PWM: ");
-        Serial.println(pwm);
+        //motor(pwm);
+
+        // Serial.print("Target [counts/s]: ");
+        // Serial.print(targetSpeed);
+        Serial.print("Left measured [counts/s]: ");
+        Serial.print(leftMotorMeasuredSpeed);
+        Serial.print(" | Right measured [counts/s]: ");
+        Serial.println(rightMotorMeasuredSpeed);
+        // Serial.print(" | Error: ");
+        // Serial.print(error);
+        // Serial.print(" | PWM: ");
+        // Serial.println(pwm);
     }
 }

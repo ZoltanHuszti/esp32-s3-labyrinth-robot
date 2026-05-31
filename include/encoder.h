@@ -3,9 +3,15 @@
 
 #include <Arduino.h>
 
-void encoder_init(uint8_t pinA, uint8_t pinB);
-float motorSpeed(float dt);
-int32_t getEncoderCount();
-void resetEncoderCount();
+void encoders_init(uint8_t leftA, uint8_t leftB, uint8_t rightA, uint8_t rightB);
+
+float leftMotorSpeed(float dt);
+float rightMotorSpeed(float dt);
+
+int32_t getLeftEncoderCount();
+int32_t getRightEncoderCount();
+
+void resetLeftEncoderCount();
+void resetRightEncoderCount();
 
 #endif

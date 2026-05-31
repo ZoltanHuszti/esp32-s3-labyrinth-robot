@@ -1,88 +1,168 @@
 #include "encoder.h"
 
-// Encoder state variables
-// This is for one motor 
-static uint8_t encoderPinA = 0;
-static uint8_t encoderPinB = 0;
-//TODO: implement for two motors 
-
-volatile int32_t encoder_count = 0;
-static int32_t lastCount = 0;
-
-// Non quadrature logic encoder ISR
-// void IRAM_ATTR encoderA_ISR()
-// {
-//     encoder_count++;
-// }
-
-// Quadrature encoder ISR, x4 decoding
-void IRAM_ATTR encoderA_ISR()
+// Private struct
+struct Encoder  
 {
-  bool a = digitalRead(encoderPinA);
-  bool b = digitalRead(encoderPinB);
+    uint8_t pinA;
+    uint8_t pinB;
+    volatile int32_t count;
+    int32_t lastCount;
+}; 
+
+static Encoder leftEncoder;
+static Encoder rightEncoder;
+
+//-------------------------//
+// left motor encoder ISRs //
+//-------------------------//
+static void IRAM_ATTR leftEncoderA_ISR()
+{
+  bool a = digitalRead(leftEncoder.pinA);
+  bool b = digitalRead(leftEncoder.pinB);
 
   if (a != b)
-    encoder_count++;
+    leftEncoder.count++;
   else
-    encoder_count--;
+    leftEncoder.count--;
 }
 
-void IRAM_ATTR encoderB_ISR()
+static void IRAM_ATTR leftEncoderB_ISR()
 {
-  bool a = digitalRead(encoderPinA);
-  bool b = digitalRead(encoderPinB);
+  bool a = digitalRead(leftEncoder.pinA);
+  bool b = digitalRead(leftEncoder.pinB);
 
   if (a == b)
-    encoder_count++;
+    leftEncoder.count++;
   else
-    encoder_count--;
+    leftEncoder.count--;
 }
 
-void encoder_init(uint8_t pinA, uint8_t pinB)
+// NOTE: On some ESP32/Arduino builds, static ISR functions with IRAM_ATTR
+// may cause issues. If so, remove static from the ISR declarations.
+
+//--------------------------//
+// right motor encoder ISRs //
+//--------------------------//
+static void IRAM_ATTR rightEncoderA_ISR() 
 {
-    encoderPinA = pinA;
-    encoderPinB = pinB;
+  bool a = digitalRead(rightEncoder.pinA);
+  bool b = digitalRead(rightEncoder.pinB);
 
-    pinMode(encoderPinA, INPUT_PULLUP);
-    pinMode(encoderPinB, INPUT_PULLUP);
-
-    attachInterrupt(digitalPinToInterrupt(encoderPinA), encoderA_ISR, CHANGE);
-    attachInterrupt(digitalPinToInterrupt(encoderPinB), encoderB_ISR, CHANGE);
-
-
+  if (a != b)
+    rightEncoder.count++;
+  else
+    rightEncoder.count--;
 }
 
-float motorSpeed(float dt)
+static void IRAM_ATTR rightEncoderB_ISR()
 {
-    //static int32_t lastCount = 0;
+  bool a = digitalRead(rightEncoder.pinA);
+  bool b = digitalRead(rightEncoder.pinB);
 
+  if (a == b)
+    rightEncoder.count++;
+  else
+    rightEncoder.count--;
+}
+
+//-------------------------------------------//
+// Encoder initialization and ISR attachment //
+//-------------------------------------------// 
+
+// Helper function to initialize an encoder and attach ISRs
+static void attachEncoder(Encoder& enc, uint8_t pinA, uint8_t pinB)
+{
+    enc.pinA = pinA;
+    enc.pinB = pinB;
+    enc.count = 0;
+    enc.lastCount = 0;
+
+    pinMode(enc.pinA, INPUT_PULLUP);
+    pinMode(enc.pinB, INPUT_PULLUP);
+}
+
+// Main initialization function for both encoders
+void encoders_init(uint8_t leftA, uint8_t leftB, uint8_t rightA, uint8_t rightB) 
+{
+    attachEncoder(leftEncoder, leftA, leftB);
+    attachEncoder(rightEncoder, rightA, rightB);
+
+    attachInterrupt(digitalPinToInterrupt(leftEncoder.pinA), leftEncoderA_ISR, CHANGE);
+    attachInterrupt(digitalPinToInterrupt(leftEncoder.pinB), leftEncoderB_ISR, CHANGE);
+
+    attachInterrupt(digitalPinToInterrupt(rightEncoder.pinA), rightEncoderA_ISR, CHANGE);
+    attachInterrupt(digitalPinToInterrupt(rightEncoder.pinB), rightEncoderB_ISR, CHANGE);
+}
+
+//---------------------------//
+// Encoder utility functions //
+//---------------------------//
+
+// Helper function to calculate speed from encoder counts
+static float encoderSpeed(Encoder& enc, float dt)
+{
     int32_t countNow;
 
     noInterrupts();
-    countNow = encoder_count;
+    countNow = enc.count;
     interrupts();
 
-    int32_t deltaCount = countNow - lastCount;
-    lastCount = countNow;
+    int32_t deltaCount = countNow - enc.lastCount;
+    enc.lastCount = countNow;
 
     return deltaCount / dt;
 }
 
-int32_t getEncoderCount()
+// Wrapper functions for left and right motor speeds
+float leftMotorSpeed(float dt)
+{
+    return encoderSpeed(leftEncoder, dt);
+}
+
+float rightMotorSpeed(float dt)
+{
+    return encoderSpeed(rightEncoder, dt);
+}
+
+// Helper function to get current encoder count safely
+static int32_t getEncoderCount(Encoder& enc)
 {
     int32_t countCopy;
 
     noInterrupts();
-    countCopy = encoder_count;
+    countCopy = enc.count;
     interrupts();
 
     return countCopy;
 }
 
-void resetEncoderCount()
+// Wrapper functions for left and right motor encoder counts
+int32_t getLeftEncoderCount()
+{
+    return getEncoderCount(leftEncoder);
+}
+
+int32_t getRightEncoderCount()
+{
+    return getEncoderCount(rightEncoder);
+}
+
+// Helper function to reset encoder counts safely
+static void resetEncoderCount(Encoder& enc)
 {
     noInterrupts();
-    encoder_count = 0;
-    lastCount = 0;
+    enc.count = 0;
+    enc.lastCount = 0;
     interrupts();
+}
+
+// Wrapper functions for left and right motor encoder count resets
+void resetLeftEncoderCount()
+{
+    resetEncoderCount(leftEncoder);
+}
+
+void resetRightEncoderCount()
+{
+    resetEncoderCount(rightEncoder);
 }
