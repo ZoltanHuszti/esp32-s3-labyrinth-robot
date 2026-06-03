@@ -1,26 +1,75 @@
 #include "controller.h"
 
-static float integral = 0.0f;
+// Private structure to hold PI controller parameters and state
+struct PIController {
+    float Kp;
+    float Ki;
+    float integral;
+    float integralLimit;
+    int outputLimit;
+};
+
+static PIController leftController;
+static PIController rightController;
+
+static void PI_init(PIController &controller, float Kp, float Ki, float integralLimit, int outputLimit)
+{
+    controller.Kp = Kp;
+    controller.Ki = Ki;
+    controller.integral = 0.0f;
+    controller.integralLimit = integralLimit;
+    controller.outputLimit = outputLimit;
+}
+
+void controllers_init()
+{
+    PI_init(leftController, 0.03f, 0.3f, 10000.0f, 255);
+    PI_init(rightController, 0.03f, 0.3f, 10000.0f, 255);
+}
 
 float calcError(float target, float measured)
 {
     return target - measured;
 }
 
-int PI_update(float error, float dt)
+static int PI_update(PIController &controller, float error, float dt)
 {
-    const float Kp = 0.03f; 
-    const float Ki = 0.3f;
+    controller.integral += error * dt;
+    controller.integral = constrain(controller.integral, -controller.integralLimit, controller.integralLimit);
 
-    integral += error * dt;
-    integral = constrain(integral, -10000.0f, 10000.0f);
+    float output = controller.Kp * error + controller.Ki * controller.integral;
+    output = constrain(output, -controller.outputLimit, controller.outputLimit);
 
-    float output = Kp * error + Ki * integral;
-
-    return constrain((int)output, -255, 255);
+    return (int)output;
 }
 
-void PI_reset()
+int leftPI_update(float error, float dt)
 {
-    integral = 0.0f;
+    return PI_update(leftController, error, dt);
+}
+
+int rightPI_update(float error, float dt)
+{
+    return PI_update(rightController, error, dt);
+}
+
+static void PI_reset(PIController &controller)
+{
+    controller.integral = 0.0f;
+}
+
+void leftPI_reset()
+{
+    PI_reset(leftController);
+}
+
+void rightPI_reset()
+{
+    PI_reset(rightController);
+}
+
+void controllers_reset()
+{
+    leftPI_reset();
+    rightPI_reset();
 }
